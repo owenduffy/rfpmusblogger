@@ -22,6 +22,8 @@ OBJECTS = usbdrv/usbdrv.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o
 # symbolic targets:
 all:	main.hex
 
+$(OBJECTS): usbconfig.h
+
 .c.o:
 	$(COMPILE) -c $< -o $@
 

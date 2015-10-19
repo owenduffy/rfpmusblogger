@@ -1,3 +1,13 @@
+Changelog.txt for RFPM1 data logger
+
+* Release 2015-10-30
+
+- Derived from EasyLogger, changed to suit Digispark and RFPM1.
+- Changed pin use to suite Digispark ATTINY86 module.
+- Changed interrupt to use PCINT.
+- ADC uses 2.56V ref, output format in dBm with -85 offset.
+- Compiled with usbdrv 39202048ea1fb7d14a5970c805ffd5f0b7f0fcdf.
+
 This file documents changes in the software, firmware and hardware of the
 EasyLogger device. New entries are always appended to the end of the file.
 Scroll down to the bottom to see the most recent changes.

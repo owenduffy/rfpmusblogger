@@ -20,15 +20,14 @@
 
 /*
 Pin assignment:
-PB1 = key input (active low with pull-up)
-PB3 = analog input (ADC3)
-PB4 = LED output (active high)
-
-PB0, PB2 = USB data lines
+PB0 = key input (active low with pull-up)
+PB1 = LED output (active high)
+PB2 = analog input (ADC1)
+PB3.4 = USB D-,D+
 */
 
-#define BIT_LED 4
-#define BIT_KEY 1
+#define BIT_LED 1
+#define BIT_KEY 0
 
 
 #define UTIL_BIN4(x)        (uchar)((0##x & 01000)/64 + (0##x & 0100)/16 + (0##x & 010)/4 + (0##x & 1))
@@ -46,7 +45,7 @@ static uchar    idleRate;           /* in 4 ms units */
 static uchar    adcPending;
 static uchar    isRecording;
 
-static uchar    valueBuffer[16];
+static uchar    valueBuffer[20],neg;
 static uchar    *nextDigit;
 
 /* ------------------------------------------------------------------------- */
@@ -104,6 +103,8 @@ const PROGMEM char usbHidReportDescriptor[USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH] 
 #define KEY_9       38
 #define KEY_0       39
 #define KEY_RETURN  40
+#define KEY_DOT     55
+#define KEY_MINUS   45
 
 /* ------------------------------------------------------------------------- */
 
@@ -118,15 +119,28 @@ uchar   key = 0;
     reportBuffer[1] = key;
 }
 
-static void evaluateADC(unsigned int value)
+static void evaluateADC(signed int value)
 {
 uchar   digit;
 
-    value += value + (value >> 1);  /* value = value * 2.5 for output in mV */
+    value += (value >> 1);
+    value -= 850; //apply intercept
+    neg = value < 0;
+    if(neg)value=-value;
     nextDigit = &valueBuffer[sizeof(valueBuffer)];
     *--nextDigit = 0xff;/* terminate with 0xff */
     *--nextDigit = 0;
     *--nextDigit = KEY_RETURN;
+    digit = value % 10;
+    value /= 10;
+    *--nextDigit = 0;
+    if(digit == 0){
+        *--nextDigit = KEY_0;
+    }else{
+       *--nextDigit = KEY_1 - 1 + digit;
+    }
+    *--nextDigit = 0;
+    *--nextDigit = KEY_DOT;
     do{
         digit = value % 10;
         value /= 10;
@@ -137,6 +151,7 @@ uchar   digit;
             *--nextDigit = KEY_1 - 1 + digit;
         }
     }while(value != 0);
+    if(neg)*--nextDigit = KEY_MINUS;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -201,7 +216,7 @@ static void timerInit(void)
 
 static void adcInit(void)
 {
-    ADMUX = UTIL_BIN8(1001, 0011);  /* Vref=2.56V, measure ADC0 */
+    ADMUX = UTIL_BIN8(1001, 0001);  /* Vref=2.56V, measure ADC1 */
     ADCSRA = UTIL_BIN8(1000, 0111); /* enable ADC, not free running, interrupt disable, rate = 1/128 */
 }
 
